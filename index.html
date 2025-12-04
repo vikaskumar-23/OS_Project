@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPU Scheduler Visualizer</title>
+    <!-- Bootstrap CSS for simple, clean UI -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        .control-panel {
+            background-color: #e9ecef;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .gantt-chart-container {
+            margin-top: 30px;
+            margin-bottom: 30px;
+            overflow-x: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background: #fff;
+            border-radius: 5px;
+        }
+        .gantt-row {
+            display: flex;
+            height: 60px;
+            position: relative;
+        }
+        .gantt-block {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            border-right: 1px solid white;
+            position: relative;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+        .gantt-block:hover {
+            opacity: 0.9;
+            transform: scaleY(1.05);
+        }
+        .time-label {
+            position: absolute;
+            bottom: -20px;
+            right: 0;
+            color: #666;
+            font-size: 10px;
+            transform: translateX(50%);
+        }
+        .start-time-label {
+            position: absolute;
+            bottom: -20px;
+            left: 0;
+            color: #666;
+            font-size: 10px;
+            transform: translateX(-50%);
+        }
+        .stats-box {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .stats-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #0d6efd;
+        }
+        input[type="color"] {
+            padding: 0;
+            border: none;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>CPU Scheduler Visualizer</h1>
+    </div>
+
+    <!-- Controls -->
+    <div class="control-panel">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-4">
+                <label class="form-label">Algorithm</label>
+                <select id="algorithm" class="form-select" onchange="toggleTimeSlice()">
+                    <option value="FCFS">First Come First Serve (FCFS)</option>
+                    <option value="NSJF">Shortest Job First (Non-Preemptive)</option>
+                    <option value="PSJF">Shortest Job First (Preemptive)</option>
+                    <option value="RR">Round Robin</option>
+                    <option value="PR">Priority (Non-Preemptive)</option>
+                </select>
+            </div>
+            <div class="col-md-2" id="timeSliceGroup" style="display:none;">
+                <label class="form-label">Time Quantum</label>
+                <input type="number" id="timeSlice" class="form-control" value="2" min="1">
+            </div>
+            <div class="col-md-6 text-end">
+                <button class="btn btn-secondary" onclick="addProcess()">+ Add Process</button>
+                <button class="btn btn-danger" onclick="resetTable()">Reset</button>
+                <button class="btn btn-primary btn-lg" onclick="simulate()">Simulate</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Input Table -->
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover text-center" id="inputTable">
+            <thead class="table-dark">
+                <tr>
+                    <th>Process ID</th>
+                    <th>Arrival Time</th>
+                    <th>Burst Time</th>
+                    <th>Priority</th>
+                    <th>Color</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="processList">
+                <!-- Initial Rows -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Visualization Area -->
+    <div id="resultsArea" style="display:none;">
+        <hr>
+        <h4 class="mt-4">Gantt Chart</h4>
+        <div class="gantt-chart-container">
+            <div id="ganttChart" class="gantt-row">
+                <!-- Gantt Blocks will be inserted here -->
+            </div>
+        </div>
+
+        <h4 class="mt-4">Results</h4>
+        <div class="table-responsive">
+            <table class="table table-striped text-center">
+                <thead class="table-primary">
+                    <tr>
+                        <th>ID</th>
+                        <th>Arrival</th>
+                        <th>Burst</th>
+                        <th>Finish Time</th>
+                        <th>Turnaround Time</th>
+                        <th>Waiting Time</th>
+                    </tr>
+                </thead>
+                <tbody id="resultTableBody">
+                    <!-- Results -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="row stats-box">
+            <div class="col-md-6">
+                Average Turnaround Time: <span id="avgTat" class="stats-value">0</span>
+            </div>
+            <div class="col-md-6">
+                Average Waiting Time: <span id="avgWt" class="stats-value">0</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // State
+    let processCount = 0;
+    const defaultColors = ['#0d6efd', '#6610f2', '#6f42c1', '#d63384', '#dc3545', '#fd7e14', '#ffc107', '#198754', '#20c997', '#0dcaf0'];
+
+    // Initialize with 3 processes
+    window.onload = function() {
+        addProcess(0, 5, 2);
+        addProcess(1, 3, 1);
+        addProcess(2, 8, 3);
+    };
+
+    function addProcess(at = 0, bt = 1, pr = 1) {
+        processCount++;
+        const tbody = document.getElementById('processList');
+        const tr = document.createElement('tr');
+        const color = defaultColors[(processCount - 1) % defaultColors.length];
+        
+        tr.innerHTML = `
+            <td>P${processCount}</td>
+            <td><input type="number" class="form-control form-control-sm text-center input-at" value="${at}" min="0"></td>
+            <td><input type="number" class="form-control form-control-sm text-center input-bt" value="${bt}" min="1"></td>
+            <td><input type="number" class="form-control form-control-sm text-center input-pr" value="${pr}" min="1"></td>
+            <td><input type="color" class="form-control form-control-sm input-color" value="${color}"></td>
+            <td><button class="btn btn-sm btn-outline-danger" onclick="removeRow(this)">×</button></td>
+        `;
+        tbody.appendChild(tr);
+    }
+
+    function removeRow(btn) {
+        const row = btn.closest('tr');
+        row.remove();
+        // Renumbering could be done here, but sticking to simple ID logic is fine.
+    }
+
+    function resetTable() {
+        document.getElementById('processList').innerHTML = '';
+        processCount = 0;
+        document.getElementById('resultsArea').style.display = 'none';
+        addProcess(0, 5, 1);
+        addProcess(1, 4, 2);
+    }
+
+    function toggleTimeSlice() {
+        const algo = document.getElementById('algorithm').value;
+        const div = document.getElementById('timeSliceGroup');
+        div.style.display = (algo === 'RR') ? 'block' : 'none';
+    }
+
+    async function simulate() {
+        const rows = document.querySelectorAll('#processList tr');
+        const processes = [];
+
+        rows.forEach((row, index) => {
+            processes.push({
+                id: index + 1, // Simple internal ID
+                at: row.querySelector('.input-at').value,
+                bt: row.querySelector('.input-bt').value,
+                pr: row.querySelector('.input-pr').value,
+                color: row.querySelector('.input-color').value
+            });
+        });
+
+        if (processes.length === 0) {
+            alert("Please add at least one process.");
+            return;
+        }
+
+        const algorithm = document.getElementById('algorithm').value;
+        const timeSlice = document.getElementById('timeSlice').value;
+
+        try {
+            const response = await fetch('/simulate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    processes: processes,
+                    algorithm: algorithm,
+                    time_slice: timeSlice
+                })
+            });
+
+            const data = await response.json();
+            renderResults(data);
+        } catch (error) {
+            console.error('Error:', error);
+            alert("An error occurred during simulation.");
+        }
+    }
+
+    function renderResults(data) {
+        document.getElementById('resultsArea').style.display = 'block';
+        
+        // 1. Render Table
+        const resultBody = document.getElementById('resultTableBody');
+        resultBody.innerHTML = '';
+        
+        // Sort results by ID for clean table display
+        const sortedProcs = data.processes.sort((a, b) => a.id - b.id);
+        
+        sortedProcs.forEach(p => {
+            const row = `<tr>
+                <td>P${p.id}</td>
+                <td>${p.at}</td>
+                <td>${p.original_bt || p.bt}</td> <!-- Handle original_bt for PSJF/RR -->
+                <td>${p.ft}</td>
+                <td>${p.tat}</td>
+                <td>${p.wt}</td>
+            </tr>`;
+            resultBody.innerHTML += row;
+        });
+
+        document.getElementById('avgTat').innerText = data.avg_tat;
+        document.getElementById('avgWt').innerText = data.avg_wt;
+
+        // 2. Render Gantt Chart
+        const chartDiv = document.getElementById('ganttChart');
+        chartDiv.innerHTML = '';
+        
+        if (data.gantt_chart.length === 0) return;
+
+        const totalDuration = data.gantt_chart[data.gantt_chart.length - 1].end;
+        
+        data.gantt_chart.forEach((block, index) => {
+            const duration = block.end - block.start;
+            const percent = (duration / totalDuration) * 100;
+            
+            const div = document.createElement('div');
+            div.className = 'gantt-block';
+            div.style.width = percent + '%';
+            div.style.backgroundColor = block.color;
+            div.innerText = 'P' + block.id;
+            
+            // Start time label (only for first block)
+            if (index === 0) {
+                const startLabel = document.createElement('span');
+                startLabel.className = 'start-time-label';
+                startLabel.innerText = block.start;
+                div.appendChild(startLabel);
+            }
+
+            // End time label
+            const endLabel = document.createElement('span');
+            endLabel.className = 'time-label';
+            endLabel.innerText = block.end;
+            div.appendChild(endLabel);
+            
+            chartDiv.appendChild(div);
+        });
+    }
+</script>
+
+</body>
+</html>
