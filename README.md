@@ -1,48 +1,34 @@
-# CPU Scheduler Visualizer
+# CPU & RTOS Scheduler Visualizer 📊
 
-A web-based simulation tool for Operating System CPU scheduling algorithms. This project visualizes process execution using Gantt charts and calculates Average Turnaround Time and Waiting Time.
+This project is a web-based simulation tool built with **Flask** (Python) and **JavaScript** for visualizing various CPU and Real-Time Operating System (RTOS) scheduling algorithms.
 
-**Author:** Vikas Kumar (2303137)
+## ✨ Features
 
-## Supported Algorithms
-* First Come First Serve (FCFS)
-* Shortest Job First (Non-Preemptive & Preemptive)
-* Round Robin (RR)
-* Priority Scheduling (Non-Preemptive)
+* **Algorithms Implemented (7):**
+    * **CPU:** FCFS, Non-Preemptive SJF (NSJF), Preemptive SJF (PSJF), Round Robin (RR), Non-Preemptive Priority (PR).
+    * **RTOS:** Fixed Priority (RM), Earliest Deadline First (EDF).
+* **Input Parameters:** Process ID, Arrival Time (AT/Offset), Burst Time (BT/Capacity), Priority (for PR/RM), Period (T) (for RM/EDF).
+* **Core Output Metrics:** Dynamic **Gantt Chart** visualization, Completion Time (FT), Turnaround Time (TAT), Waiting Time (WT), and Average Metrics.
+* **RTOS Specific:** Calculates the **Hyperperiod (LCM)** for the Gantt chart length and explicitly reports **Deadline Misses** (for RM/EDF).
 
-## Prerequisites
-* Python 3.x
-* Flask
+## 🚀 Setup and Run
 
-## Setup & Installation
-
-1.  **Install Flask**:
+1.  **Dependencies:** Ensure you have Python and Flask installed.
     ```bash
-    pip install flask
+    pip install Flask
     ```
-
-2.  **Create Project Structure**:
-    Create a folder for your project and set up the following structure exactly:
-    ```text
-    /project_folder
-    │
-    ├── app.py                # Paste the Python code here
-    └── templates/
-        └── index.html        # Paste the HTML code here
-    ```
-
-## How to Run
-
-1.  Open your terminal or command prompt in the project folder.
-2.  Run the application:
+2.  **Run:** Execute the main Python application (`app.py`).
     ```bash
     python app.py
     ```
-3.  Open your web browser and navigate to:
-    `http://127.0.0.1:5000`
+3.  **Access:** Open your web browser and navigate to the local server address.
+    ```
+    [http://127.0.0.1:5000/]
+    ```
 
-## Usage
-1.  **Add Processes**: Enter Arrival Time, Burst Time, and Priority (if applicable).
-2.  **Select Algorithm**: Choose the scheduling method from the dropdown.
-3.  **Set Time Quantum**: Required only for Round Robin.
-4.  **Simulate**: Click to generate the Gantt Chart and results table.
+## 🛠 Project Structure
+
+| File | Description |
+| :--- | :--- |
+| `app.py` | Main Flask backend. Contains API endpoints and core scheduling logic (solvers for all 7 algorithms). |
+| `index.html` | Frontend interface (HTML, CSS/Bootstrap, JavaScript). Handles process input, simulation API calls, and renders the results and the interactive Gantt chart. |
