@@ -1,4 +1,3 @@
-# CPU & RTOS Scheduler Visualizer 📊
 
 This project is a web-based simulation tool built with **Flask** (Python) and **JavaScript** for visualizing various CPU and Real-Time Operating System (RTOS) scheduling algorithms.
 
@@ -10,7 +9,8 @@ This project is a web-based simulation tool built with **Flask** (Python) and **
 * **Input Parameters:** Process ID, Arrival Time (AT/Offset), Burst Time (BT/Capacity), Priority (for PR/RM), Period (T) (for RM/EDF).
 * **Core Output Metrics:** Dynamic **Gantt Chart** visualization, Completion Time (FT), Turnaround Time (TAT), Waiting Time (WT), and Average Metrics.
 * **RTOS Specific:** Calculates the **Hyperperiod (LCM)** for the Gantt chart length and explicitly reports **Deadline Misses** (for RM/EDF).
-![Uploading image.png…]()
+<img width="1385" height="1243" alt="image" src="https://github.com/user-attachments/assets/5cf28ab8-92f8-4f3a-b33e-34943c0b57d2" />
+
 
 ## 🚀 Setup and Run
 
@@ -33,4 +33,5 @@ This project is a web-based simulation tool built with **Flask** (Python) and **
 | :--- | :--- |
 | `app.py` | Main Flask backend. Contains API endpoints and core scheduling logic (solvers for all 7 algorithms). |
 | `index.html` | Frontend interface (HTML, CSS/Bootstrap, JavaScript). Handles process input, simulation API calls, and renders the results and the interactive Gantt chart. |
+
 
